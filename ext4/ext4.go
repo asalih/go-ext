@@ -13,9 +13,9 @@ var (
 	ErrInodeNotFound = xerrors.New("inode not found")
 )
 
-func Check(r io.Reader) bool {
+func Check(r io.Reader) error {
 	_, err := parseSuperBlock(r)
-	return err == nil
+	return err
 }
 
 func (ext4 *FileSystem) Extents(inode *Inode) ([]Extent, error) {
