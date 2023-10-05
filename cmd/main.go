@@ -9,13 +9,12 @@ import (
 )
 
 func main() {
-	// u14, err := os.Open("C:\\tmp\\raw_images\\ubuntu_20230920121211-1_image.001")
-	u14, err := os.Open("C:\\tmp\\raw_images\\ubuntu1404_20230925221736-1_image.001")
+	extFile, err := os.Open(os.Getenv("EXT_PATH"))
 	if err != nil {
 		log.Fatalf("file err: %v", err)
 	}
 
-	fs, err := ext.NewFS(u14)
+	fs, err := ext.NewFS(extFile)
 	if err != nil {
 		log.Fatalf("stat err: %v", err)
 	}
