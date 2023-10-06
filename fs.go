@@ -22,6 +22,19 @@ type FileSystem struct {
 	bgs []disklayout.BlockGroup
 }
 
+func Check(r io.ReaderAt) error {
+	sb, err := readSuperBlock(r)
+	if err != nil {
+		return xerrors.Errorf("failed to parse super block: %w", err)
+	}
+
+	if sb.Magic() != common.EXT_SUPER_MAGIC {
+		return syserror.EINVAL
+	}
+
+	return nil
+}
+
 // NewFS is created io/fs.FS for ext4 filesystem
 func NewFS(r io.ReaderAt) (*FileSystem, error) {
 	sb, err := readSuperBlock(r)
@@ -87,8 +100,8 @@ func (f *FileSystem) ReadDir(path string) ([]fs.DirEntry, error) {
 	return dirEntries, nil
 }
 
-func (ext4 *FileSystem) readDirEntry(name string) ([]fs.DirEntry, error) {
-	rootEntries, err := ext4.listEntries(disklayout.RootDirInode)
+func (f *FileSystem) readDirEntry(name string) ([]fs.DirEntry, error) {
+	rootEntries, err := f.listEntries(disklayout.RootDirInode)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to list file infos: %w", err)
 	}
@@ -124,7 +137,7 @@ func (ext4 *FileSystem) readDirEntry(name string) ([]fs.DirEntry, error) {
 			return nil, fs.ErrNotExist
 		}
 
-		rootEntries, err = ext4.listInoEntries(currentIno)
+		rootEntries, err = f.listInoEntries(currentIno)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to list directory entries inode(%d): %w", currentIno, err)
 		}
@@ -147,16 +160,16 @@ func (ext4 *FileSystem) readDirEntry(name string) ([]fs.DirEntry, error) {
 	return nil, fs.ErrNotExist
 }
 
-func (ext4 *FileSystem) listEntries(ino uint32) ([]*inode, error) {
-	in, err := newInode(ext4, ino)
+func (f *FileSystem) listEntries(ino uint32) ([]*inode, error) {
+	in, err := newInode(f, ino)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get inode: %w", err)
 	}
 
-	return ext4.listInoEntries(in)
+	return f.listInoEntries(in)
 }
 
-func (ext4 *FileSystem) listInoEntries(in *inode) ([]*inode, error) {
+func (f *FileSystem) listInoEntries(in *inode) ([]*inode, error) {
 	dir, ok := in.impl.(*directory)
 	if !ok {
 		return nil, xerrors.Errorf("inode is not dir: %d", in.inodeNum)
@@ -168,7 +181,7 @@ func (ext4 *FileSystem) listInoEntries(in *inode) ([]*inode, error) {
 			continue
 		}
 
-		entry, err := newInode(ext4, d.Inode())
+		entry, err := newInode(f, d.Inode())
 		if err != nil {
 			return nil, err
 		}
