@@ -74,8 +74,3 @@ func newDirectory(args inodeArgs, newDirent bool) (*directory, error) {
 
 	return file, nil
 }
-
-func (i *inode) isDir() bool {
-	_, ok := i.impl.(*directory)
-	return ok
-}

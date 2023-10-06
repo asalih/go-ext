@@ -2,6 +2,7 @@ package linux
 
 import (
 	"fmt"
+	"io/fs"
 	"strings"
 )
 
@@ -242,6 +243,11 @@ func (m FileMode) ExtraBits() FileMode {
 // IsDir returns true if file type represents a directory.
 func (m FileMode) IsDir() bool {
 	return m.FileType() == S_IFDIR
+}
+
+// Mode returns fs.FileMode
+func (m FileMode) FSMode() fs.FileMode {
+	return fs.FileMode(m.FileType())
 }
 
 // String returns a string representation of m.

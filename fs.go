@@ -173,6 +173,7 @@ func (ext4 *FileSystem) listInoEntries(in *inode) ([]*inode, error) {
 			return nil, err
 		}
 
+		entry.name = name
 		inodes = append(inodes, entry)
 	}
 

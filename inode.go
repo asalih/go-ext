@@ -24,7 +24,8 @@ import (
 //
 // +stateify savable
 type inode struct {
-	fs.DirEntry
+	// name of entry
+	name string
 
 	// refs is a reference count. refs is accessed using atomic memory operations.
 	refs int64
@@ -48,6 +49,13 @@ type inode struct {
 }
 
 var _ fs.DirEntry = (*inode)(nil)
+
+type inodeArgs struct {
+	fs        *FileSystem
+	inodeNum  uint32
+	blkSize   uint64
+	diskInode disklayout.Inode
+}
 
 // newInode is the inode constructor. Reads the inode off disk. Identifies
 // inodes based on the absolute inode number on disk.
@@ -107,13 +115,6 @@ func newInode(fsR *FileSystem, inodeNum uint32) (*inode, error) {
 	}
 }
 
-type inodeArgs struct {
-	fs        *FileSystem
-	inodeNum  uint32
-	blkSize   uint64
-	diskInode disklayout.Inode
-}
-
 func (in *inode) init(args inodeArgs, impl interface{}) {
 	in.fsR = args.fs
 	in.inodeNum = args.inodeNum
@@ -122,9 +123,10 @@ func (in *inode) init(args inodeArgs, impl interface{}) {
 	in.impl = impl
 }
 
-// func (in *inode) checkPermissions(creds *auth.Credentials, ats vfs.AccessTypes) error {
-// 	return vfs.GenericCheckPermissions(creds, ats, in.diskInode.Mode(), in.diskInode.UID(), in.diskInode.GID())
-// }
+func (in *inode) isDir() bool {
+	_, ok := in.impl.(*directory)
+	return ok
+}
 
 // statTo writes the statx fields to the output parameter.
 func (in *inode) statTo(stat *Statx) {
@@ -138,13 +140,29 @@ func (in *inode) statTo(stat *Statx) {
 	stat.GID = uint32(in.diskInode.GID())
 	stat.Ino = uint64(in.inodeNum)
 	stat.Size = in.diskInode.Size()
-	// stat.Atime = in.diskInode.AccessTime().StatxTimestamp()
-	// stat.Ctime = in.diskInode.ChangeTime().StatxTimestamp()
-	// stat.Mtime = in.diskInode.ModificationTime().StatxTimestamp()
+	stat.Atime = in.diskInode.AccessTime()
+	stat.Ctime = in.diskInode.ChangeTime()
+	stat.Mtime = in.diskInode.ModificationTime()
 	// stat.DevMajor = linux.UNNAMED_MAJOR
-	// stat.DevMinor = in.fs.devMinor
+	// stat.DevMinor = in.fsR.devMinor
 	// TODO(b/134676337): Set stat.Blocks which is the number of 512 byte blocks
 	// (including metadata blocks) required to represent this file.
+}
+
+func (i *inode) Name() string {
+	return i.name
+}
+
+func (i *inode) IsDir() bool {
+	return i.isDir()
+}
+
+func (i *inode) Type() fs.FileMode {
+	return i.diskInode.Mode().FSMode()
+}
+
+func (i *inode) Info() (fs.FileInfo, error) {
+	return &fileInfo{inode: i}, nil
 }
 
 // getBGNum returns the block group number that a given inode belongs to.
