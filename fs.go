@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -28,8 +29,8 @@ func Check(r io.ReaderAt) error {
 		return xerrors.Errorf("failed to parse super block: %w", err)
 	}
 
-	if sb.Magic() != common.EXT_SUPER_MAGIC {
-		return syserror.EINVAL
+	if err := isCompatible(sb); err != nil {
+		return err
 	}
 
 	return nil
@@ -40,10 +41,6 @@ func NewFS(r io.ReaderAt) (*FileSystem, error) {
 	sb, err := readSuperBlock(r)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to parse super block: %w", err)
-	}
-
-	if sb.Magic() != common.EXT_SUPER_MAGIC {
-		return nil, syserror.EINVAL
 	}
 
 	if err := isCompatible(sb); err != nil {
@@ -61,20 +58,14 @@ func NewFS(r io.ReaderAt) (*FileSystem, error) {
 		bgs: bgs,
 	}
 
-	// rin, err := newInode(fs, disklayout.RootDirInode)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// fs.rootInode = rin
-
 	return fs, nil
 }
 
 func isCompatible(sb disklayout.SuperBlock) error {
-	// Please note that what is being checked is limited based on the fact that we
-	// are mounting readonly and that we are not journaling. When mounting
-	// read/write or with a journal, this must be reevaluated.
+	if sb.Magic() != common.EXT_SUPER_MAGIC {
+		return syserror.EINVAL
+	}
+
 	incompatFeatures := sb.IncompatibleFeatures()
 	if incompatFeatures.MetaBG {
 		return errors.New("ext fs: meta block groups are not supported")
@@ -98,6 +89,80 @@ func (f *FileSystem) ReadDir(path string) ([]fs.DirEntry, error) {
 	}
 
 	return dirEntries, nil
+}
+
+func (f *FileSystem) Open(name string) (fs.File, error) {
+	name = strings.TrimPrefix(name, "/")
+	if !fs.ValidPath(name) {
+		return nil, fs.ErrInvalid
+	}
+
+	dirName, fileName := filepath.Split(name)
+	dirEntries, err := f.readDirEntry(dirName)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entry := range dirEntries {
+		if entry.IsDir() || entry.Name() != fileName {
+			continue
+		}
+
+		inode, ok := entry.(*inode)
+		if !ok {
+			return nil, xerrors.Errorf("unspecified error, entry is not dir entry %+v", entry)
+		}
+
+		if inode.isRefInode() {
+			return nil, errors.New("must be file or symlink")
+		}
+
+		return &file{
+			info: &fileInfo{inode: inode},
+		}, nil
+	}
+	return nil, fs.ErrNotExist
+}
+
+func (f *FileSystem) Stat(name string) (fs.FileInfo, error) {
+	fi, err := f.Open(name)
+	if err != nil {
+		info, err := f.ReadDirInfo(name)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to read dir info: %w", err)
+		}
+		return info, nil
+	}
+	info, err := fi.Stat()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to stat file: %w", err)
+	}
+	return info, nil
+}
+
+func (f *FileSystem) ReadDirInfo(name string) (fs.FileInfo, error) {
+	if name == "/" {
+		inode, err := newInode(f, disklayout.RootDirInode)
+		inode.name = "/"
+		if err != nil {
+			return nil, xerrors.Errorf("failed to parse root inode: %w", err)
+		}
+		return &fileInfo{
+			inode: inode,
+		}, nil
+	}
+	name = strings.TrimRight(name, "/")
+	dirs, dir := path.Split(name)
+	dirEntries, err := f.readDirEntry(dirs)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to read dir entry: %w", err)
+	}
+	for _, entry := range dirEntries {
+		if entry.Name() == strings.Trim(dir, "/") {
+			return entry.Info()
+		}
+	}
+	return nil, fs.ErrNotExist
 }
 
 func (f *FileSystem) readDirEntry(name string) ([]fs.DirEntry, error) {
