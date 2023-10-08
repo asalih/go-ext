@@ -19,7 +19,7 @@ func main() {
 		log.Fatalf("stat err: %v", err)
 	}
 
-	ents, err := fs.ReadDir("/home")
+	ents, err := fs.ReadDir("/dev")
 	fmt.Println(err, ents)
 
 }

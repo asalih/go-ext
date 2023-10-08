@@ -5,7 +5,6 @@ import (
 
 	"github.com/asalih/go-ext/disklayout"
 	"github.com/asalih/go-ext/linux"
-	"github.com/asalih/go-ext/syserror"
 )
 
 // inode represents an ext inode.
@@ -111,7 +110,11 @@ func newInode(fsR *FileSystem, inodeNum uint32) (*inode, error) {
 		return &f.inode, nil
 	default:
 		// TODO(b/134676337): Return appropriate errors for sockets, pipes and devices.
-		return nil, syserror.EINVAL
+		f, err := newRefInode(args)
+		if err != nil {
+			return nil, err
+		}
+		return &f.inode, nil
 	}
 }
 
