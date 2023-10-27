@@ -121,7 +121,7 @@ func (f *extentFile) buildExtTreeFromDisk(entry disklayout.ExtentEntry) (*diskla
 		}
 	}
 
-	return &disklayout.ExtentNode{header, entries}, nil
+	return &disklayout.ExtentNode{Header: header, Entries: entries}, nil
 }
 
 // ReadAt implements io.ReaderAt.ReadAt.

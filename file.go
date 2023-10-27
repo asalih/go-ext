@@ -18,26 +18,22 @@ type fileInfo struct {
 }
 
 type Statx struct {
-	Mask           uint32
-	Blksize        uint32
-	Attributes     uint64
-	Nlink          uint32
-	UID            uint32
-	GID            uint32
-	Mode           uint16
-	_              uint16
-	Ino            uint64
-	Size           uint64
-	Blocks         uint64
-	AttributesMask uint64
-	Atime          time.Time
-	Btime          time.Time
-	Ctime          time.Time
-	Mtime          time.Time
-	RdevMajor      uint32
-	RdevMinor      uint32
-	DevMajor       uint32
-	DevMinor       uint32
+	Mask      uint32
+	Blksize   uint32
+	Nlink     uint32
+	UID       uint32
+	GID       uint32
+	Mode      uint16
+	Ino       uint64
+	Size      uint64
+	Blocks    uint64
+	Atime     time.Time
+	Ctime     time.Time
+	Mtime     time.Time
+	RdevMajor uint32
+	RdevMinor uint32
+	DevMajor  uint32
+	DevMinor  uint32
 }
 
 func (f *fileInfo) Name() string {
@@ -108,7 +104,7 @@ func (f *file) Seek(offset int64, whence int) (ret int64, err error) {
 	case io.SeekCurrent:
 		newPos = f.position + offset
 	case io.SeekEnd:
-		newPos = f.info.Size() - offset
+		newPos = f.info.Size() + offset
 	default:
 		return 0, errors.New("invalid whence value")
 	}
