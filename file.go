@@ -57,8 +57,8 @@ func (f *fileInfo) IsDir() bool {
 }
 
 func (f *fileInfo) Sys() any {
-	var st Statx
-	f.statTo(&st)
+	st := new(Statx)
+	f.statTo(st)
 	return st
 }
 
