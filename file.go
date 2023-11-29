@@ -90,6 +90,21 @@ func (f *file) Read(b []byte) (int, error) {
 	return n, err
 }
 
+func (f *file) ReadAt(p []byte, off int64) (n int, err error) {
+	rf, ok := f.info.inode.impl.(*regularFile)
+	if !ok {
+		return 0, fs.ErrInvalid
+	}
+
+	n, err = rf.impl.ReadAt(p, off)
+	if err != nil {
+		return n, err
+	}
+
+	f.position = off
+	return n, err
+}
+
 func (f *file) Close() error {
 	return nil
 }
