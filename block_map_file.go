@@ -121,14 +121,14 @@ func (f *blockMapFile) ReadAt(dst []byte, off int64) (int, error) {
 		read += curR
 		offset += uint64(curR)
 		if err != nil {
-			return read, err
+			return min(read, toRead), err
 		}
 	}
-
-	if read < len(dst) {
-		return read, io.EOF
+	n := min(read, toRead)
+	if n < len(dst) {
+		return n, io.EOF
 	}
-	return read, nil
+	return n, nil
 }
 
 // read is the recursive step of the ReadAt function. It relies on knowing the
@@ -187,4 +187,11 @@ func (f *blockMapFile) read(curPhyBlk uint32, relFileOff uint64, height uint, ds
 // Formula: blkSize * ((blkSize / 4)^height)
 func getCoverage(blkSize uint64, height uint) uint64 {
 	return blkSize * uint64(math.Pow(float64(blkSize/4), float64(height)))
+}
+
+func min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
 }
