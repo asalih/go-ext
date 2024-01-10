@@ -82,6 +82,10 @@ func isCompatible(sb disklayout.SuperBlock) error {
 	return nil
 }
 
+func (f *FileSystem) SuperBlock() disklayout.SuperBlock {
+	return f.sb
+}
+
 func (f *FileSystem) ReadDir(path string) ([]fs.DirEntry, error) {
 	dirEntries, err := f.readDirEntry(path)
 	if err != nil {
