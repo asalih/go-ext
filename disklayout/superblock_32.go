@@ -76,3 +76,8 @@ func (sb *SuperBlock32Bit) IncompatibleFeatures() IncompatFeatures {
 func (sb *SuperBlock32Bit) ReadOnlyCompatibleFeatures() RoCompatFeatures {
 	return RoCompatFeaturesFromInt(sb.FeatureRoCompat)
 }
+
+// ExtType implements SuperBlock.ExtType
+func (sb *SuperBlock32Bit) ExtType() ExtType {
+	return getExtType(sb.FeatureCompat, sb.FeatureIncompat, sb.FeatureRoCompat)
+}

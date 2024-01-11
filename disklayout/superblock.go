@@ -14,13 +14,13 @@ const (
 // ones necessary. This can be expanded when need be.
 //
 // Location and replication:
-//     - The superblock is located at offset 1024 in block group 0.
-//     - Redundant copies of the superblock and group descriptors are kept in
-//       all groups if SbSparse feature flag is NOT set. If it is set, the
-//       replicas only exist in groups whose group number is either 0 or a
-//       power of 3, 5, or 7.
-//     - There is also a sparse superblock feature v2 in which there are just
-//       two replicas saved in the block groups pointed by sb.s_backup_bgs.
+//   - The superblock is located at offset 1024 in block group 0.
+//   - Redundant copies of the superblock and group descriptors are kept in
+//     all groups if SbSparse feature flag is NOT set. If it is set, the
+//     replicas only exist in groups whose group number is either 0 or a
+//     power of 3, 5, or 7.
+//   - There is also a sparse superblock feature v2 in which there are just
+//     two replicas saved in the block groups pointed by sb.s_backup_bgs.
 //
 // Replicas should eventually be updated if the superblock is updated.
 //
@@ -118,6 +118,9 @@ type SuperBlock interface {
 	// Revision returns the superblock revision. Superblock struct fields from
 	// offset 0x54 till 0x150 should only be used if superblock has DynamicRev.
 	Revision() SbRevision
+
+	// ExtType returns ext type
+	ExtType() ExtType
 }
 
 // SbRevision is the type for superblock revisions.
@@ -260,6 +263,12 @@ const (
 
 	// SbEncrypted indicates that this fs contains encrypted inodes.
 	SbEncrypted = 0x10000
+
+	Ext2FeatureIncompatSupp        uint32 = SbDirentFileType | SbMetaBG
+	Ext2FeatureIncompatUnsupported uint32 = ^Ext2FeatureIncompatSupp
+
+	Ext3FeatureIncompatSupp        uint32 = SbDirentFileType | SbRecovery | SbMetaBG
+	Ext3FeatureIncompatUnsupported uint32 = ^Ext3FeatureIncompatSupp
 )
 
 // IncompatFeatures represents a superblock's incompatible feature set. If the
@@ -348,6 +357,9 @@ const (
 	// SbLargeFile indicates that this fs has been used to store a file >= 2GiB.
 	SbLargeFile = 0x2
 
+	// SbBtreeDir
+	SbBtreeDir = 0x4
+
 	// SbHugeFile indicates that this fs contains files whose sizes are
 	// represented in units of logicals blocks, not 512-byte sectors.
 	SbHugeFile = 0x8
@@ -381,6 +393,12 @@ const (
 	// SbReadOnly marks this filesystem as readonly. Should refuse to mount in
 	// read/write mode.
 	SbReadOnly = 0x1000
+
+	Ext2FeatureRoCompatSupp        uint32 = SbSparse | SbLargeFile | SbBtreeDir
+	Ext2FeatureRoCompatUnsupported uint32 = ^Ext2FeatureRoCompatSupp
+
+	Ext3FeatureRoCompatSupp        uint32 = SbSparse | SbLargeFile | SbBtreeDir
+	Ext3FeatureRoCompatUnsupported uint32 = ^Ext3FeatureRoCompatSupp
 )
 
 // RoCompatFeatures represents a superblock's readonly compatible feature set.

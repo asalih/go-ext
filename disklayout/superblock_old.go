@@ -49,6 +49,9 @@ func (sb *SuperBlockOld) UnmarshalBytes(src []byte) error {
 	return common.UnmarshalBytes(sb, src)
 }
 
+// ExtType implements SuperBlock.ExtType
+func (sb *SuperBlockOld) ExtType() ExtType { return 0 }
+
 // InodesCount implements SuperBlock.InodesCount.
 func (sb *SuperBlockOld) InodesCount() uint32 { return sb.InodesCountRaw }
 
