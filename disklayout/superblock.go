@@ -477,3 +477,23 @@ func RoCompatFeaturesFromInt(f uint32) RoCompatFeatures {
 		ReadOnly:     f&SbReadOnly > 0,
 	}
 }
+
+type ExtType int
+
+const (
+	Ext2 = iota
+	Ext3
+	Ext4
+)
+
+func getExtType(fCompat, fInCompat uint32) ExtType {
+	if fInCompat&SbExtents != 0 {
+		return Ext4
+	}
+
+	if fCompat&SbHasJournal != 0 {
+		return Ext3
+	}
+
+	return Ext2
+}

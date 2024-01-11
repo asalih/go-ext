@@ -99,5 +99,5 @@ func (sb *SuperBlock64Bit) BgDescSize() uint16 { return sb.BgDescSizeRaw }
 
 // ExtType implements SuperBlock.ExtType
 func (sb *SuperBlock64Bit) ExtType() ExtType {
-	return getExtType(sb.FeatureCompat, sb.FeatureIncompat, sb.FeatureRoCompat)
+	return getExtType(sb.FeatureCompat, sb.FeatureIncompat)
 }
