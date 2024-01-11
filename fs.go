@@ -23,17 +23,17 @@ type FileSystem struct {
 	bgs []disklayout.BlockGroup
 }
 
-func Check(r io.ReaderAt) error {
+func Check(r io.ReaderAt) (disklayout.ExtType, error) {
 	sb, err := readSuperBlock(r)
 	if err != nil {
-		return xerrors.Errorf("failed to parse super block: %w", err)
+		return 0, xerrors.Errorf("failed to parse super block: %w", err)
 	}
 
 	if err := isCompatible(sb); err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return sb.ExtType(), nil
 }
 
 // NewFS is created io/fs.FS for ext4 filesystem
