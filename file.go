@@ -67,8 +67,21 @@ func (f *file) Stat() (fs.FileInfo, error) {
 }
 
 func (f *file) Read(b []byte) (int, error) {
-	rf, ok := f.info.inode.impl.(*regularFile)
-	if !ok {
+	var rdr io.ReaderAt
+	if f.info.inode.isSymlink() {
+		sl, ok := f.info.inode.impl.(*symlink)
+		if !ok {
+			return 0, fs.ErrInvalid
+		}
+		rdr = sl
+
+	} else if f.info.inode.isRegular() {
+		rf, ok := f.info.inode.impl.(*regularFile)
+		if !ok {
+			return 0, fs.ErrInvalid
+		}
+		rdr = rf.impl
+	} else {
 		return 0, fs.ErrInvalid
 	}
 
@@ -78,7 +91,7 @@ func (f *file) Read(b []byte) (int, error) {
 		toRead = int(sz - f.position)
 	}
 
-	n, err := rf.impl.ReadAt(b[:toRead], f.position)
+	n, err := rdr.ReadAt(b[:toRead], f.position)
 	if err != nil {
 		return n, err
 	}
@@ -91,12 +104,25 @@ func (f *file) Read(b []byte) (int, error) {
 }
 
 func (f *file) ReadAt(p []byte, off int64) (n int, err error) {
-	rf, ok := f.info.inode.impl.(*regularFile)
-	if !ok {
+	var rdr io.ReaderAt
+	if f.info.inode.isSymlink() {
+		sl, ok := f.info.inode.impl.(*symlink)
+		if !ok {
+			return 0, fs.ErrInvalid
+		}
+		rdr = sl
+
+	} else if f.info.inode.isRegular() {
+		rf, ok := f.info.inode.impl.(*regularFile)
+		if !ok {
+			return 0, fs.ErrInvalid
+		}
+		rdr = rf.impl
+	} else {
 		return 0, fs.ErrInvalid
 	}
 
-	n, err = rf.impl.ReadAt(p, off)
+	n, err = rdr.ReadAt(p, off)
 	if err != nil {
 		return n, err
 	}

@@ -1,5 +1,9 @@
 package ext
 
+import (
+	"strings"
+)
+
 // symlink represents a symlink inode.
 //
 // +stateify savable
@@ -39,4 +43,9 @@ func newSymlink(args inodeArgs) (*symlink, error) {
 func (in *inode) isSymlink() bool {
 	_, ok := in.impl.(*symlink)
 	return ok
+}
+
+func (f *symlink) ReadAt(p []byte, off int64) (n int, err error) {
+	r := strings.NewReader(f.target)
+	return r.ReadAt(p, off)
 }
