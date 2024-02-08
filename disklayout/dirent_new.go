@@ -1,7 +1,6 @@
 package disklayout
 
 import (
-	"fmt"
 	"unsafe"
 
 	"github.com/asalih/go-ext/common"
@@ -54,5 +53,5 @@ func (d *DirentNew) FileType() (InodeType, bool) {
 		return inodeType, true
 	}
 
-	panic(fmt.Sprintf("unknown file type %v", d.FileTypeRaw))
+	return InodeType(d.FileTypeRaw), false
 }
