@@ -58,7 +58,7 @@ type inodeArgs struct {
 
 // newInode is the inode constructor. Reads the inode off disk. Identifies
 // inodes based on the absolute inode number on disk.
-func newInode(fsR *FileSystem, inodeNum uint32, fileType *disklayout.InodeType) (*inode, error) {
+func newInode(fsR *FileSystem, inodeNum uint32) (*inode, error) {
 	if inodeNum == 0 {
 		panic("inode number 0 on ext filesystems is not possible")
 	}
@@ -89,14 +89,7 @@ func newInode(fsR *FileSystem, inodeNum uint32, fileType *disklayout.InodeType) 
 		diskInode: diskInode,
 	}
 
-	var mode linux.FileMode
-	if fileType != nil {
-		mode = linux.FileMode(uint16(fileType.LinuxType()))
-	} else {
-		mode = diskInode.Mode().FileType()
-	}
-
-	switch mode {
+	switch diskInode.Mode().FileType() {
 	case linux.ModeSymlink:
 		f, err := newSymlink(args)
 		if err != nil {

@@ -146,7 +146,7 @@ func (f *FileSystem) Stat(name string) (fs.FileInfo, error) {
 
 func (f *FileSystem) ReadDirInfo(name string) (fs.FileInfo, error) {
 	if name == "/" {
-		inode, err := newInode(f, disklayout.RootDirInode, nil)
+		inode, err := newInode(f, disklayout.RootDirInode)
 		inode.name = "/"
 		if err != nil {
 			return nil, xerrors.Errorf("failed to parse root inode: %w", err)
@@ -230,7 +230,7 @@ func (f *FileSystem) readDirEntry(name string) ([]fs.DirEntry, error) {
 }
 
 func (f *FileSystem) listEntries(ino uint32) ([]*inode, error) {
-	in, err := newInode(f, ino, nil)
+	in, err := newInode(f, ino)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get inode: %w", err)
 	}
@@ -250,8 +250,8 @@ func (f *FileSystem) listInoEntries(in *inode) ([]*inode, error) {
 			continue
 		}
 
-		ft, _ := d.FileType()
-		entry, err := newInode(f, d.Inode(), &ft)
+		// ft, _ := d.FileType()
+		entry, err := newInode(f, d.Inode())
 		if err != nil {
 			return nil, err
 		}
