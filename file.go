@@ -122,12 +122,20 @@ func (f *file) ReadAt(p []byte, off int64) (n int, err error) {
 		return 0, fs.ErrInvalid
 	}
 
-	n, err = rdr.ReadAt(p, off)
+	sz := f.info.Size()
+	toRead := len(p)
+	if f.position+int64(toRead) > sz {
+		toRead = int(sz - off)
+	}
+
+	n, err = rdr.ReadAt(p[:toRead], off)
 	if err != nil {
 		return n, err
 	}
+	if toRead != len(p) {
+		err = io.EOF
+	}
 
-	f.position = off
 	return n, err
 }
 
