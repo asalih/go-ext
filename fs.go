@@ -4,7 +4,6 @@ import (
 	"errors"
 	"io"
 	"io/fs"
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -176,7 +175,8 @@ func (f *FileSystem) readDirEntry(name string) ([]fs.DirEntry, error) {
 	}
 
 	var currentIno *inode
-	dirs := strings.Split(strings.Trim(filepath.Clean(name), string(os.PathSeparator)), string(os.PathSeparator))
+	name = strings.ReplaceAll(filepath.Clean(name), "\\", "/")
+	dirs := strings.Split(strings.Trim(name, "/"), "/")
 	if len(dirs) == 1 && dirs[0] == "." || dirs[0] == "" {
 		var dirEntries []fs.DirEntry
 		for _, sino := range rootEntries {
